@@ -188,7 +188,6 @@ bool CanCastle(int board[8][8], bool isWhite, bool kingside) {
         int tempBoard[8][8];
         memcpy(tempBoard, board, sizeof(int) * 8 * 8);
         
-        // Move king to this square
         tempBoard[row][col] = isWhite ? 6 : -6;
         tempBoard[row][kingCol] = 0;
         
