@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <direct.h>
 #include <stdlib.h>
-#include <algorithm>
+#include <algorithm>  
 
 using namespace std;
 
