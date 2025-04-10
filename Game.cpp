@@ -66,7 +66,7 @@ void LoadPieceImages() {
     blackKnight = LoadTexture("D:/Projects and Stuff/assets/black_knight.png");
     blackBishop = LoadTexture("D:/Projects and Stuff/assets/black_bishop.png");
     blackRook = LoadTexture("D:/Projects and Stuff/assets/black_rook.png");
-    blackQueen = LoadTexture("D:/Projects and Stuff/assets/black_queen.png");
+    blackQueen = LoadTexture("D:/Projects and Stuff/assets/black_queen.png"); 
     blackKing = LoadTexture("D:/Projects and Stuff/assets/black_king.png");
 }
 
