@@ -705,13 +705,13 @@ int main() {
                                 bool isWhite = piece > 0;
                                 
                                 
-                                // Handle castling
+                                // Fish Fish (Mansion)
                                 if (abs(piece) == 6 && abs(selectedSquareCol - col) == 2) {
                                     bool kingside = col > selectedSquareCol;
                                     int rookCol = kingside ? 7 : 0;
                                     int newRookCol = kingside ? 5 : 3;
                                     
-                                    // Move the rook
+                                    // Haathi hilao
                                     board[row][newRookCol] = board[row][rookCol];
                                     board[row][rookCol] = 0;
                                 }
@@ -736,7 +736,7 @@ int main() {
                                     enPassantTargetCol = -1;
                                 }
                                 
-                                // Check for pawn promotion
+                                // Check for Gadha to Ghoda
                                 if (abs(piece) == 1 && (row == 0 || row == 7)) {
                                     promotionPending = true;  // Activate graphical menu
                                     promotionRow = row;
@@ -744,7 +744,7 @@ int main() {
                                     isWhitePromoting = (piece > 0);
                                 }
                                 
-                                // Update castling flags
+                                // Update Fish Fish flags
                                 if (abs(piece) == 6) {
                                     if (isWhite) whiteKingMoved = true;
                                     else blackKingMoved = true;
@@ -766,7 +766,7 @@ int main() {
                                     board[row][col] = originalPiece;
                                 } else {
                                     
-                                    // Check for checkmate
+                                    // Check for CheckMate
                                     if (IsCheckmate(board, !isWhiteTurn)) {
                                         gameOver = true;
                                         DrawText(isWhiteTurn ? "White wins!" : "Black wins!", 
