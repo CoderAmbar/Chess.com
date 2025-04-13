@@ -8,7 +8,7 @@ using namespace std;
 
 #define SCREEN_WIDTH 500
 #define SCREEN_HEIGHT 500
-
+ 
 // Function declarations
 void DrawBoard(bool isWhiteTurn);
 void DrawPieces(int board[8][8]);
