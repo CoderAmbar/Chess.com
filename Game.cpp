@@ -43,6 +43,12 @@ bool blackRookQueensideMoved = false;
 bool promotionActive = false;
 int promotionRow, promotionCol;
 bool isWhitePromoting;
+Sound moveSound;
+Sound captureSound;
+Sound checkSound;
+Sound castleSound;
+Sound checkmateSound;
+Sound promotionSound;
 
 // Initial board setup
 int board[8][8] = {
@@ -85,6 +91,35 @@ void UnloadPieceImages() {
     UnloadTexture(blackRook);
     UnloadTexture(blackQueen);
     UnloadTexture(blackKing);
+}
+
+void LoadSounds() {
+
+    InitAudioDevice();
+
+    moveSound = LoadSound("D:/Projects and Stuff/assets/moveSound.mp3");
+    captureSound = LoadSound("D:/Projects and Stuff/assets/captureSound.mp3");
+    checkSound = LoadSound("D:/Projects and Stuff/assets/captureSound.mp3");
+    castleSound = LoadSound("D:/Projects and Stuff/assets/moveSound.mp3");
+    checkmateSound = LoadSound("D:/Projects and Stuff/assets/checkmateSound.mp3");
+    promotionSound = LoadSound("D:/Projects and Stuff/assets/moveSound.mp3");
+    
+    SetSoundVolume(moveSound, 0.7f);
+    SetSoundVolume(captureSound, 0.7f);
+    SetSoundVolume(checkSound, 0.7f);
+    SetSoundVolume(castleSound, 0.7f);
+    SetSoundVolume(checkmateSound, 0.7f);
+    SetSoundVolume(promotionSound, 0.7f);
+}
+
+void UnloadSounds() {
+    UnloadSound(moveSound);
+    UnloadSound(captureSound);
+    UnloadSound(checkSound);
+    UnloadSound(castleSound);
+    UnloadSound(checkmateSound);
+    UnloadSound(promotionSound);
+    CloseAudioDevice();
 }
 
 void DrawBoard(bool isWhiteTurn) {
@@ -617,6 +652,7 @@ int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Chess Game");
 
     LoadPieceImages();
+    LoadSounds();
 
     bool gameOver = false;
     bool promotionPending = false;
@@ -705,13 +741,13 @@ int main() {
                                 bool isWhite = piece > 0;
                                 
                                 
-                                // Fish Fish (Mansion)
+                                // Handle castling
                                 if (abs(piece) == 6 && abs(selectedSquareCol - col) == 2) {
                                     bool kingside = col > selectedSquareCol;
                                     int rookCol = kingside ? 7 : 0;
                                     int newRookCol = kingside ? 5 : 3;
                                     
-                                    // Haathi hilao
+                                    // Move the rook
                                     board[row][newRookCol] = board[row][rookCol];
                                     board[row][rookCol] = 0;
                                 }
@@ -736,15 +772,34 @@ int main() {
                                     enPassantTargetCol = -1;
                                 }
                                 
-                                // Check for Gadha to Ghoda
+                                //Sounds for each move
+                                if (originalPiece == 0) {
+                                    if (abs(piece) == 6 && abs(selectedSquareCol - col) == 2) {
+                                        PlaySound(castleSound); 
+                                    } else {
+                                        PlaySound(moveSound);   
+                                    }
+                                } else {
+                                    PlaySound(captureSound);    
+                                }
+                                
+                                if (IsKingInCheck(board, !isWhiteTurn)) {
+                                    PlaySound(checkSound);
+                                    if (IsCheckmate(board, !isWhiteTurn)) {
+                                        PlaySound(checkmateSound);
+                                        gameOver = true;
+                                    }
+                                }
+                                
+                                // Check for pawn promotion
                                 if (abs(piece) == 1 && (row == 0 || row == 7)) {
-                                    promotionPending = true;  // Activate graphical menu
+                                    promotionPending = true;  
                                     promotionRow = row;
                                     promotionCol = col;
                                     isWhitePromoting = (piece > 0);
                                 }
                                 
-                                // Update Fish Fish flags
+                                // Update castling flags
                                 if (abs(piece) == 6) {
                                     if (isWhite) whiteKingMoved = true;
                                     else blackKingMoved = true;
@@ -766,7 +821,7 @@ int main() {
                                     board[row][col] = originalPiece;
                                 } else {
                                     
-                                    // Check for CheckMate
+                                    // Check for checkmate
                                     if (IsCheckmate(board, !isWhiteTurn)) {
                                         gameOver = true;
                                         DrawText(isWhiteTurn ? "White wins!" : "Black wins!", 
@@ -798,6 +853,7 @@ int main() {
     }
 
     UnloadPieceImages();
+    UnloadSounds();
     CloseWindow();
     return 0;
 }
