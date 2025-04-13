@@ -4,7 +4,7 @@
 #include <algorithm> 
 #include <iostream>
 
-using namespace std;
+using namespace std; 
  
 #define SCREEN_WIDTH 500
 #define SCREEN_HEIGHT 500
