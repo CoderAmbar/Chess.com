@@ -1,7 +1,7 @@
 #include "raylib.h"
 #include <stdio.h>
 #include <direct.h>
-#include <algorithm>
+#include <algorithm> 
 #include <iostream>
 
 using namespace std;
