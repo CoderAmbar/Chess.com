@@ -1,14 +1,14 @@
 #include "raylib.h"
 #include <stdio.h>
 #include <direct.h>
-#include <algorithm> 
+#include <algorithm>
 #include <iostream>
 
-using namespace std; 
- 
-#define SCREEN_WIDTH 500
-#define SCREEN_HEIGHT 500
- 
+using namespace std;
+
+#define BOARD_WIDTH 500
+#define BOARD_HEIGHT 500
+
 // Function declarations
 void DrawBoard(bool isWhiteTurn);
 void DrawPieces(int board[8][8]);
@@ -25,6 +25,8 @@ bool CanCastle(int board[8][8], bool isWhite, bool kingside);
 // Global variables for textures
 Texture2D whitePawn, whiteKnight, whiteBishop, whiteRook, whiteQueen, whiteKing;
 Texture2D blackPawn, blackKnight, blackBishop, blackRook, blackQueen, blackKing;
+Texture2D backgroundImage;
+Texture2D boardTexture;
 
 // Selection variables
 int selectedSquareRow = -1;
@@ -41,6 +43,7 @@ bool blackKingMoved = false;
 bool blackRookKingsideMoved = false;
 bool blackRookQueensideMoved = false;
 bool promotionActive = false;
+bool mousePressed = false;
 int promotionRow, promotionCol;
 bool isWhitePromoting;
 Sound moveSound;
@@ -49,6 +52,7 @@ Sound checkSound;
 Sound castleSound;
 Sound checkmateSound;
 Sound promotionSound;
+
 
 // Initial board setup
 int board[8][8] = {
@@ -123,10 +127,34 @@ void UnloadSounds() {
 }
 
 void DrawBoard(bool isWhiteTurn) {
-    for (int row = 0; row < 8; row++) {
-        for (int col = 0; col < 8; col++) {
-            Color color = ((row + col) % 2 == 0) ? BEIGE : DARKBROWN;
-            DrawRectangle(col * 62.5, row * 62.5, 62.5, 62.5, color);
+    int boardOffsetX = (GetScreenWidth() - BOARD_WIDTH) / 2;
+    int boardOffsetY = (GetScreenHeight() - BOARD_HEIGHT) / 2;
+    
+    if (boardTexture.id != 0) {
+        DrawTexturePro(
+            boardTexture,
+            (Rectangle){0, 0, (float)boardTexture.width, (float)boardTexture.height},
+            (Rectangle){
+                (float)boardOffsetX,
+                (float)boardOffsetY,
+                (float)BOARD_WIDTH,
+                (float)BOARD_HEIGHT
+            },
+            (Vector2){0, 0},
+            0,
+            WHITE
+        );
+    } else {
+        // Fallback: Draw colored squares (your original board)
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                Color color = ((row + col) % 2 == 0) ? BEIGE : DARKBROWN;
+                DrawRectangle(
+                    col * 62.5f + boardOffsetX,
+                    row * 62.5f + boardOffsetY,
+                    62.5f, 62.5f, color
+                );
+            }
         }
     }
 
@@ -148,13 +176,18 @@ void DrawBoard(bool isWhiteTurn) {
         }
 
         if (kingRow != -1 && kingCol != -1) {
-            DrawRectangle(kingCol * 62.5, kingRow * 62.5, 62.5, 62.5, RED);
+            DrawRectangle(kingCol * 62.5 + boardOffsetX, kingRow * 62.5 + boardOffsetY, 62.5, 62.5, RED);
         }
     }
 }
 
 void DrawPieces(int board[8][8]) {
-    const float squareSize = 62.5;
+    const float squareSize = BOARD_WIDTH / 8.0f;
+    int boardOffsetX = (GetScreenWidth() - BOARD_WIDTH) / 2;
+    int boardOffsetY = (GetScreenHeight() - BOARD_HEIGHT) / 2;
+    
+    BeginBlendMode(BLEND_ALPHA);
+
     for (int row = 0; row < 8; row++) {
         for (int col = 0; col < 8; col++) {
             int piece = board[row][col];
@@ -178,14 +211,17 @@ void DrawPieces(int board[8][8]) {
             }
 
             if (pieceTexture) {
-                float x = col * squareSize + (squareSize - pieceTexture->width * 0.5f) / 2;
-                float y = row * squareSize + (squareSize - pieceTexture->height * 0.5f) / 2;
-
-                Vector2 position = {x, y};
-                DrawTextureEx(*pieceTexture, position, 0.0f, 0.5f, WHITE);
+                float x = boardOffsetX + col * squareSize + (squareSize - pieceTexture->width * 0.45f) / 2;
+                float y = boardOffsetY + row * squareSize + (squareSize - pieceTexture->height * 0.45f) / 2;
+                
+                float scale = 0.45f;
+                
+                DrawTextureEx(*pieceTexture,(Vector2){x, y}, 0.0f, scale, WHITE);
             }
         }
     }
+    
+    EndBlendMode();
 }
 
 bool WouldBeInCheck(int board[8][8], int piece, int startRow, int startCol, int endRow, int endCol, bool isWhite) {
@@ -238,13 +274,13 @@ bool CanCastle(int board[8][8], bool isWhite, bool kingside) {
 }
 
 void DrawPromotionMenu() {
-    DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, (Color){0, 0, 0, 180});
+    DrawRectangle(0, 0, BOARD_WIDTH, BOARD_HEIGHT, (Color){0, 0, 0, 180});
     
     // Draw menu box
     float menuWidth = 200;
     float menuHeight = 80;
-    float x = SCREEN_WIDTH/2 - menuWidth/2;
-    float y = SCREEN_HEIGHT/2 - menuHeight/2;
+    float x = BOARD_WIDTH/2 - menuWidth/2;
+    float y = BOARD_HEIGHT/2 - menuHeight/2;
     DrawRectangle(x, y, menuWidth, menuHeight, LIGHTGRAY);
     
     Texture2D* pieces[4] = {
@@ -567,14 +603,15 @@ void HandlePieceMovement(int board[8][8], int row, int col, int possibleMoves[8]
 
 void DrawValidMoves(int board[8][8], int piece, int row, int col) {
     int possibleMoves[8][8] = {0};
-
+    int boardOffsetX = (GetScreenWidth() - BOARD_WIDTH) / 2;
+    int boardOffsetY = (GetScreenHeight() - BOARD_HEIGHT) / 2;
     HandlePieceMovement(board, row, col, possibleMoves);
 
     Color transparentGreen = {200, 200, 200, 128};
     for (int r = 0; r < 8; r++) {
         for (int c = 0; c < 8; c++) {
             if (possibleMoves[r][c] == 1) {
-                DrawRectangle(c * 62.5, r * 62.5, 62.5, 62.5, transparentGreen);
+                DrawRectangle(c * 62.5 + boardOffsetX, r * 62.5 + boardOffsetY, 62.5, 62.5, transparentGreen);
             }
         }
     }
@@ -612,7 +649,9 @@ bool IsKingInCheck(int board[8][8], bool isWhite) {
 }
 
 bool IsCheckmate(int board[8][8], bool isWhite) {
-    if (!IsKingInCheck(board, isWhite)) return false;
+    if (!IsKingInCheck(board, isWhite)) {
+        return false;
+    }
 
     for (int startRow = 0; startRow < 8; startRow++) {
         for (int startCol = 0; startCol < 8; startCol++) {
@@ -623,19 +662,17 @@ bool IsCheckmate(int board[8][8], bool isWhite) {
                 for (int endRow = 0; endRow < 8; endRow++) {
                     for (int endCol = 0; endCol < 8; endCol++) {
                         
-                        if (IsValidMove(board, piece, startRow, startCol, endRow, endCol, true)) {
-                            int capturedPiece = board[endRow][endCol];
-                            board[endRow][endCol] = piece;
-                            board[startRow][startCol] = 0;
-                            
-                            bool stillInCheck = IsKingInCheck(board, isWhite);
-                            
-                            board[startRow][startCol] = piece;
-                            board[endRow][endCol] = capturedPiece;
-                            
-                            if (!stillInCheck) {
-                                return false;
-                            }
+                        int capturedPiece = board[endRow][endCol];
+                        board[endRow][endCol] = piece;
+                        board[startRow][startCol] = 0;
+                        
+                        bool stillInCheck = IsKingInCheck(board, isWhite);
+                        
+                        board[startRow][startCol] = piece;
+                        board[endRow][endCol] = capturedPiece;
+                        
+                        if (!stillInCheck) {
+                            return false; 
                         }
                     }
                 }
@@ -649,31 +686,41 @@ bool IsCheckmate(int board[8][8], bool isWhite) {
 bool isWhiteTurn = true;  
 
 int main() {
+    int SCREEN_WIDTH = GetScreenWidth();
+    int SCREEN_HEIGHT = GetScreenHeight();
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Chess Game");
-
+    backgroundImage = LoadTexture("D:/Projects and Stuff/assets/chess_background.png");
+    boardTexture = LoadTexture("assets/chessboard.png");
+    
     LoadPieceImages();
     LoadSounds();
-
+    
     bool gameOver = false;
     bool promotionPending = false;
     int promotionRow = -1;
     int promotionCol = -1;
-
+    
     while (!WindowShouldClose()) {
         BeginDrawing();
-        ClearBackground(RAYWHITE);
+        DrawTexturePro(backgroundImage, 
+            (Rectangle){0, 0, (float)backgroundImage.width, (float)backgroundImage.height},
+            (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()},
+            (Vector2){0, 0}, 0, WHITE);
+        int boardOffsetX = (GetScreenWidth() - BOARD_WIDTH) / 2;
+        int boardOffsetY = (GetScreenHeight() - BOARD_HEIGHT) / 2;
 
         DrawBoard(isWhiteTurn);
         DrawPieces(board);
 
         if (!gameOver) {
-            if (promotionPending) {//Gadha evolve in Ghoda
-                DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, (Color){ 0, 0, 0, 128 });
+            if (promotionPending) {
+                // Promotion menu
+                DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){ 0, 0, 0, 128 });
                 
                 float menuWidth = 250;
                 float menuHeight = 80;
-                float menuX = (SCREEN_WIDTH - menuWidth) / 2;
-                float menuY = (SCREEN_HEIGHT - menuHeight) / 2;
+                float menuX = boardOffsetX + (BOARD_WIDTH - menuWidth) / 2;
+                float menuY = boardOffsetY + (BOARD_HEIGHT - menuHeight - 10) / 2;
                 DrawRectangle(menuX, menuY, menuWidth, menuHeight, LIGHTGRAY);
                 
                 Texture2D* pieces[4] = {
@@ -689,171 +736,159 @@ int main() {
                     float btnX = menuX + 20 + i * 55;
                     float btnY = menuY + 20;
                     
-                    //Mouse for Hover
                     Vector2 mousePos = GetMousePosition();
                     Color btnColor = CheckCollisionPointRec(mousePos, (Rectangle){btnX, btnY, 50, 50}) ? LIGHTGRAY : WHITE;
                     DrawRectangle(btnX, btnY, 50, 50, btnColor);
-
-                    // Draw button
-                    DrawRectangle(btnX, btnY, 50, 50, WHITE);
-                    DrawTextureEx(*pieces[i], (Vector2){ btnX, btnY}, 0, 0.4f, WHITE);
+                    DrawTextureEx(*pieces[i], (Vector2){ btnX, btnY}, 0, 0.35f, WHITE);
                     DrawText(labels[i], btnX, btnY, 10, BLACK);
 
-                    //Hover Effect
                     if (btnColor.g == LIGHTGRAY.g) { 
                         DrawRectangleLines(btnX, btnY, 50, 50, GOLD);
                     }
                     
-                    // Handle clicks
                     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                        Vector2 mousePos = GetMousePosition();
                         if (CheckCollisionPointRec(mousePos, (Rectangle){ btnX, btnY, 50, 50 })) {
                             board[promotionRow][promotionCol] = isWhitePromoting ? (5 - i) : -(5 - i);
                             promotionPending = false;
+                            isWhiteTurn = !isWhiteTurn;
                             break;
                         }
                     }
                 }
-                isWhiteTurn = !isWhiteTurn;
-                
-            } else {
-                Vector2 mousePos = GetMousePosition();
-                int row = mousePos.y / 62.5;
-                int col = mousePos.x / 62.5;
-
-                if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-                    if (selectedSquareRow == -1 && selectedSquareCol == -1) {
-
-                        if ((isWhiteTurn && board[row][col] > 0) || (!isWhiteTurn && board[row][col] < 0)) {
-                            selectedSquareRow = row;
-                            selectedSquareCol = col;
-                            pieceSelected = true;
-                        }
-                    } else {
+            } 
+            else {
+                // Main game logic
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                    Vector2 mousePos = GetMousePosition();
+                    
+                    if (mousePos.x >= boardOffsetX && mousePos.x < boardOffsetX + BOARD_WIDTH &&
+                        mousePos.y >= boardOffsetY && mousePos.y < boardOffsetY + BOARD_HEIGHT) {
                         
-                        if (board[row][col] != 0 && board[row][col] * board[selectedSquareRow][selectedSquareCol] > 0) {
-                            selectedSquareRow = row;
-                            selectedSquareCol = col;
-                        } else {
-                            // Attempt to make a move
-                            if (IsValidMove(board, board[selectedSquareRow][selectedSquareCol], selectedSquareRow, selectedSquareCol, row, col)) {
-                                int piece = board[selectedSquareRow][selectedSquareCol];
-                                bool isWhite = piece > 0;
-                                
-                                
-                                // Handle castling
-                                if (abs(piece) == 6 && abs(selectedSquareCol - col) == 2) {
-                                    bool kingside = col > selectedSquareCol;
-                                    int rookCol = kingside ? 7 : 0;
-                                    int newRookCol = kingside ? 5 : 3;
-                                    
-                                    // Move the rook
-                                    board[row][newRookCol] = board[row][rookCol];
-                                    board[row][rookCol] = 0;
-                                }
-                                
-                                // Handle en passant
-                                if (abs(piece) == 1 && col != selectedSquareCol && board[row][col] == 0) {
-                                    // Capture the pawn that was bypassed
-                                    board[selectedSquareRow][col] = 0;
-                                }
-                                
-                                // Make the move
-                                int originalPiece = board[row][col];
-                                board[row][col] = piece;
-                                board[selectedSquareRow][selectedSquareCol] = 0;
-                                
-                                // Set en passant target if pawn moved two squares
-                                if (abs(piece) == 1 && abs(row - selectedSquareRow) == 2) {
-                                    enPassantTargetRow = (row + selectedSquareRow) / 2;
-                                    enPassantTargetCol = col;
-                                } else {
-                                    enPassantTargetRow = -1;
-                                    enPassantTargetCol = -1;
-                                }
-                                
-                                //Sounds for each move
-                                if (originalPiece == 0) {
-                                    if (abs(piece) == 6 && abs(selectedSquareCol - col) == 2) {
-                                        PlaySound(castleSound); 
-                                    } else {
-                                        PlaySound(moveSound);   
-                                    }
-                                } else {
-                                    PlaySound(captureSound);    
-                                }
-                                
-                                if (IsKingInCheck(board, !isWhiteTurn)) {
-                                    PlaySound(checkSound);
-                                    if (IsCheckmate(board, !isWhiteTurn)) {
-                                        PlaySound(checkmateSound);
-                                        gameOver = true;
-                                    }
-                                }
-                                
-                                // Check for pawn promotion
-                                if (abs(piece) == 1 && (row == 0 || row == 7)) {
-                                    promotionPending = true;  
-                                    promotionRow = row;
-                                    promotionCol = col;
-                                    isWhitePromoting = (piece > 0);
-                                }
-                                
-                                // Update castling flags
-                                if (abs(piece) == 6) {
-                                    if (isWhite) whiteKingMoved = true;
-                                    else blackKingMoved = true;
-                                }
-                                if (abs(piece) == 4) {
-                                    if (isWhite) {
-                                        if (selectedSquareCol == 0) whiteRookQueensideMoved = true;
-                                        if (selectedSquareCol == 7) whiteRookKingsideMoved = true;
-                                    } else {
-                                        if (selectedSquareCol == 0) blackRookQueensideMoved = true;
-                                        if (selectedSquareCol == 7) blackRookKingsideMoved = true;
-                                    }
-                                }
-                                
-                                // Check if the move leaves the king in check
-                                if (IsKingInCheck(board, isWhiteTurn)) {
-                                    // Undo the move if it's illegal
-                                    board[selectedSquareRow][selectedSquareCol] = piece;
-                                    board[row][col] = originalPiece;
-                                } else {
-                                    
-                                    // Check for checkmate
-                                    if (IsCheckmate(board, !isWhiteTurn)) {
-                                        gameOver = true;
-                                        DrawText(isWhiteTurn ? "White wins!" : "Black wins!", 
-                                            100, SCREEN_HEIGHT/2 - 20, 30, BLACK);
-                                        }
-                                        
-                                    }
-                                    // Valid move, switch turns
-                                    isWhiteTurn = !isWhiteTurn;
+                        int row = (mousePos.y - boardOffsetY) / 62.5;
+                        int col = (mousePos.x - boardOffsetX) / 62.5;
+
+                        // If no piece is selected, try to select one
+                        if (selectedSquareRow == -1 && selectedSquareCol == -1) {
+                            if ((isWhiteTurn && board[row][col] > 0) || (!isWhiteTurn && board[row][col] < 0)) {
+                                selectedSquareRow = row;
+                                selectedSquareCol = col;
                             }
-                            pieceSelected = false;
-                            selectedSquareRow = -1;
-                            selectedSquareCol = -1;
+                        }
+                        // If we have a selected piece, try to move it
+                        else {
+                            // Check if we're clicking on another piece of the same color
+                            if (board[row][col] != 0 && 
+                                board[row][col] * board[selectedSquareRow][selectedSquareCol] > 0) {
+                                // Select the new piece instead
+                                selectedSquareRow = row;
+                                selectedSquareCol = col;
+                            } 
+                            else {
+                                // Attempt to make a move
+                                if (IsValidMove(board, board[selectedSquareRow][selectedSquareCol], 
+                                              selectedSquareRow, selectedSquareCol, row, col)) {
+                                    int piece = board[selectedSquareRow][selectedSquareCol];
+                                    bool isWhite = piece > 0;
+                                    
+                                    // Handle castling
+                                    if (abs(piece) == 6 && abs(selectedSquareCol - col) == 2) {
+                                        bool kingside = col > selectedSquareCol;
+                                        int rookCol = kingside ? 7 : 0;
+                                        int newRookCol = kingside ? 5 : 3;
+                                        
+                                        board[row][newRookCol] = board[row][rookCol];
+                                        board[row][rookCol] = 0;
+                                    }
+                                    
+                                    // Handle en passant
+                                    if (abs(piece) == 1 && col != selectedSquareCol && board[row][col] == 0) {
+                                        board[selectedSquareRow][col] = 0;
+                                    }
+                                    
+                                    // Make the move
+                                    int originalPiece = board[row][col];
+                                    board[row][col] = piece;
+                                    board[selectedSquareRow][selectedSquareCol] = 0;
+                                    
+                                    // Set en passant target
+                                    if (abs(piece) == 1 && abs(row - selectedSquareRow) == 2) {
+                                        enPassantTargetRow = (row + selectedSquareRow) / 2;
+                                        enPassantTargetCol = col;
+                                    } else {
+                                        enPassantTargetRow = -1;
+                                        enPassantTargetCol = -1;
+                                    }
+                                    
+                                    // Play sounds
+                                    if (originalPiece == 0) {
+                                        PlaySound(abs(piece) == 6 && abs(selectedSquareCol - col) == 2 ? castleSound : moveSound);
+                                    } else {
+                                        PlaySound(captureSound);
+                                    }
+                                    
+                                    // Check for check/checkmate
+                                    if (IsKingInCheck(board, !isWhiteTurn)) {
+                                        PlaySound(checkSound);
+                                        if (IsCheckmate(board, !isWhiteTurn)) {
+                                            PlaySound(checkmateSound);
+                                            gameOver = true;
+                                        }
+                                    }
+                                    
+                                    // Check for pawn promotion
+                                    if (abs(piece) == 1 && (row == 0 || row == 7)) {
+                                        promotionPending = true;
+                                        promotionRow = row;
+                                        promotionCol = col;
+                                        isWhitePromoting = isWhiteTurn;
+                                    }
+                                    
+                                    // Update castling flags
+                                    if (abs(piece) == 6) {
+                                        isWhite ? whiteKingMoved = true : blackKingMoved = true;
+                                    }
+                                    if (abs(piece) == 4) {
+                                        if (isWhite) {
+                                            if (selectedSquareCol == 0) whiteRookQueensideMoved = true;
+                                            if (selectedSquareCol == 7) whiteRookKingsideMoved = true;
+                                        } else {
+                                            if (selectedSquareCol == 0) blackRookQueensideMoved = true;
+                                            if (selectedSquareCol == 7) blackRookKingsideMoved = true;
+                                        }
+                                    }
+                                    
+                                    // Validate move doesn't leave king in check
+                                    if (IsKingInCheck(board, isWhiteTurn)) {
+                                        board[selectedSquareRow][selectedSquareCol] = piece;
+                                        board[row][col] = originalPiece;
+                                    } else {
+                                        isWhiteTurn = !isWhiteTurn;
+                                    }
+                                }
+                                selectedSquareRow = -1;
+                                selectedSquareCol = -1;
+                            }
                         }
                     }
                 }
 
-                if (pieceSelected) {
-                    DrawValidMoves(board, board[selectedSquareRow][selectedSquareCol], selectedSquareRow, selectedSquareCol);
+                if (selectedSquareRow != -1 && selectedSquareCol != -1) {
+                    DrawValidMoves(board, board[selectedSquareRow][selectedSquareCol], 
+                                 selectedSquareRow, selectedSquareCol);
                 }
             }
-        } else {
-            DrawText("Checkmate! Game Over.", 100, SCREEN_HEIGHT / 2 - 20, 30, BLACK);
-            gameOver = true;
+        } 
+        else {
+            DrawText("Checkmate! Game Over.", 100, SCREEN_HEIGHT / 2 - 20, 30, RED);
         }
         
         EndDrawing();
-        continue;
     }
 
     UnloadPieceImages();
     UnloadSounds();
+    UnloadTexture(backgroundImage);
+    UnloadTexture(boardTexture);
     CloseWindow();
     return 0;
 }
