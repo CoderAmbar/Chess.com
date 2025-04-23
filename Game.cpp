@@ -3,7 +3,7 @@
 #include <direct.h> 
 #include <algorithm>
 #include <iostream> 
- 
+  
 using namespace std;
 
 #define BOARD_WIDTH 500
