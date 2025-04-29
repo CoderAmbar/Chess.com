@@ -4,7 +4,7 @@
 #include <algorithm>  
 #include <iostream>  
 #include <cstring> // For memcpy
-
+ 
 using namespace std;
 
 // Screen-related constants
