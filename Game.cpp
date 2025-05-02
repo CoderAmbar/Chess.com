@@ -3,7 +3,7 @@
 #include <direct.h> 
 #include <algorithm>  
 #include <iostream>  
-#include <cstring> // For memcpy
+#include <cstring>
  
 using namespace std;
 
