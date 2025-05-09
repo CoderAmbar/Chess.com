@@ -1,6 +1,6 @@
 # Chess Game with Raylib
 
-![Chess Game Screenshot](screenshot.png) *(Preview image of the chess game)*
+![Chess Game Screenshot](screenshot.png)
 
 A complete chess implementation with all standard rules including pawn promotion, en passant, castling, and checkmate detection, built using Raylib for graphics.
 
