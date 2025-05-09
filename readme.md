@@ -142,20 +142,20 @@ g++ main.cpp -o chess -framework CoreVideo -framework IOKit -framework Cocoa -fr
 ## Future Improvements
 
 ### Planned Features
-- [ ] Promotion choice UI (queen/rook/bishop/knight)
+- [✔] Promotion choice UI (queen/rook/bishop/knight)
 - [ ] Undo move functionality
 - [ ] Game timer/clock
-- [ ] Save/load game state
+- [✔] Save/load game state
 - [ ] AI opponent
 - [ ] Move history display
 - [ ] Animated piece movements
-- [ ] Sound effects
+- [✔] Sound effects
 
 ### Code Refactoring
 - [ ] Separate into multiple source files
 - [ ] Implement proper chess notation
 - [ ] Add unit tests
-- [ ] Optimize move validation
+- [✔] Optimize move validation
 
 ## Credits
 
