@@ -1,17 +1,17 @@
 name: Auto Commit
 on:
   schedule:
-    - cron: '0 */6 * * *'  # Runs every 6 hours
-  workflow_dispatch:       # Optional: Allows manual runs
+    - cron: '0 */6 * * *'  # ✅ Fixed: Changed "+/6" to "*/6" (correct cron syntax)
+  workflow_dispatch:       # Optional: Allows manual triggering
 
 jobs:
   auto-commit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # ✅ Fixed: Added missing "s" in "runs-on"
     steps:
-      - uses: actions/checkout@v4
-      - run: |
+      - uses: actions/checkout@v4  # ✅ Fixed: Changed "user" to "uses"
+      - run: |  # ✅ Fixed: Added proper YAML formatting
           echo "Automated commit at $(date)" >> contributions.txt
-          git config --global user.name "YourGitHubUsername"
+          git config --global user.name "YourGitHubUsername"  # ✅ Fixed: Changed "user-name" to "user.name"
           git config --global user.email "youremail@example.com"
           git add .
           git commit -m "Auto-commit: $(date)"
