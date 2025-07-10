@@ -159,7 +159,7 @@ g++ main.cpp -o chess -framework CoreVideo -framework IOKit -framework Cocoa -fr
 
 ## Credits
 
-- Chess piece sprites: [Specify source if available]
+- Chess piece sprites: [Chess.com](https://www.chess.com)
 - Raylib: [www.raylib.com](https://www.raylib.com/)
 - Developed by: Ambar @CoderAmbar
 - Conrtibutors: Sara Jain @SaraJain90
